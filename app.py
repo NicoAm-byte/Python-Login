@@ -16,18 +16,17 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    return render_template('login.html')  # Cambiado a login.html
+    return render_template('login.html')
 
 @app.route('/registrar', methods=['POST'])
 def registrar():
-    nombre = request.form['nombre']
-    apellido = request.form['apellido']
+    nombre_completo = request.form['nombre_completo']  # Campo para nombre completo
     telefono = request.form['telefono']
     correo = request.form['correo']
     contrasena = request.form['contrasena']
     
-    if not nombre or not telefono or not contrasena:  # Validar campos obligatorios
-        flash("Nombre, Teléfono y Contraseña son obligatorios", "error")
+    if not nombre_completo or not telefono or not contrasena:  # Validar campos obligatorios
+        flash("Nombre Completo, Teléfono y Contraseña son obligatorios", "error")
         return redirect(url_for('index'))
 
     # Hashear la contraseña
@@ -37,8 +36,8 @@ def registrar():
     cursor = conn.cursor()
     
     # Insertar nuevo usuario
-    cursor.execute('INSERT INTO usuarios (nombre, apellido, telefono, correo, contrasena) VALUES (%s, %s, %s, %s, %s)', 
-                   (nombre, apellido, telefono, correo, hashed_password))
+    cursor.execute('INSERT INTO usuarios (nombre_completo, telefono, correo, contrasena) VALUES (%s, %s, %s, %s)', 
+                   (nombre_completo, telefono, correo, hashed_password))
     conn.commit()
     cursor.close()
     conn.close()
@@ -48,20 +47,20 @@ def registrar():
 
 @app.route('/iniciar_sesion', methods=['POST'])
 def iniciar_sesion():
-    nombre = request.form['nombre']
+    nombre_completo = request.form['nombre_completo']  # Campo para nombre completo
     contrasena = request.form['contrasena']
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     # Verificar credenciales
-    cursor.execute('SELECT * FROM usuarios WHERE nombre = %s', (nombre,))
+    cursor.execute('SELECT * FROM usuarios WHERE nombre_completo = %s', (nombre_completo,))
     usuario = cursor.fetchone()
     cursor.close()
     conn.close()
     
-    if usuario and bcrypt.checkpw(contrasena.encode('utf-8'), usuario[5].encode('utf-8')):  # Verificar la contraseña
-        session['nombre'] = nombre
+    if usuario and bcrypt.checkpw(contrasena.encode('utf-8'), usuario[4].encode('utf-8')):  # Verificar la contraseña
+        session['nombre_completo'] = nombre_completo
         return redirect(url_for('bienvenida'))
     else:
         flash("Credenciales incorrectas", "error")
@@ -69,14 +68,15 @@ def iniciar_sesion():
 
 @app.route('/bienvenida')
 def bienvenida():
-    if 'nombre' in session:
-        return f"Bienvenido, {session['nombre']}!"
+    if 'nombre_completo' in session:
+        return f"Bienvenido, {session['nombre_completo']}!"
     return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
-    session.pop('nombre', None)
+    session.pop('nombre_completo', None)
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
